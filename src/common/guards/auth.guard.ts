@@ -4,6 +4,7 @@ import {
   ExecutionContext,
   UnauthorizedException,
   ForbiddenException,
+  Logger,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { SupabaseService } from '../services/supabase.service';
@@ -12,6 +13,8 @@ import { Role, Permission } from '../decorators/roles.decorator';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
+  private readonly logger = new Logger(AuthGuard.name);
+
   constructor(
     private supabaseService: SupabaseService,
     private reflector: Reflector,
@@ -28,6 +31,7 @@ export class AuthGuard implements CanActivate {
     const token = this.extractTokenFromHeader(request);
     
     if (!token) {
+      this.logger.error('No token provided in request');
       throw new UnauthorizedException('No token provided');
     }
 
@@ -35,7 +39,13 @@ export class AuthGuard implements CanActivate {
       // Verify token with Supabase
       const { user, error } = await this.supabaseService.verifyToken(token);
       
-      if (error || !user) {
+      if (error) {
+        this.logger.error(`Token verification failed: ${error.message}`);
+        throw new UnauthorizedException('Invalid token');
+      }
+
+      if (!user) {
+        this.logger.error('No user found for token');
         throw new UnauthorizedException('Invalid token');
       }
 
@@ -48,12 +58,14 @@ export class AuthGuard implements CanActivate {
       // Check required roles
       const requiredRoles = this.reflector.get<Role[]>('roles', context.getHandler()) || [];
       if (requiredRoles.length > 0 && !this.matchRoles(requiredRoles, roles)) {
+        this.logger.warn(`User ${user.id} lacks required roles: ${requiredRoles.join(', ')}`);
         throw new ForbiddenException('Insufficient role permissions');
       }
 
       // Check required permissions
       const requiredPermissions = this.reflector.get<Permission[]>('permissions', context.getHandler()) || [];
       if (requiredPermissions.length > 0 && !this.matchPermissions(requiredPermissions, permissions)) {
+        this.logger.warn(`User ${user.id} lacks required permissions: ${requiredPermissions.join(', ')}`);
         throw new ForbiddenException('Insufficient permissions');
       }
 
@@ -68,6 +80,7 @@ export class AuthGuard implements CanActivate {
         permissions,
         tenantId,
         metadata: user.user_metadata,
+        token,
       };
 
       request.user = userContext;
@@ -77,8 +90,10 @@ export class AuthGuard implements CanActivate {
         this.contextService.set('tenantId', tenantId);
       }
 
+      this.logger.debug(`Successfully authenticated user ${user.id}`);
       return true;
     } catch (error) {
+      this.logger.error(`Authentication failed: ${error.message}`, error.stack);
       if (error instanceof UnauthorizedException || error instanceof ForbiddenException) {
         throw error;
       }
@@ -87,8 +102,24 @@ export class AuthGuard implements CanActivate {
   }
 
   private extractTokenFromHeader(request: any): string | undefined {
-    const [type, token] = request.headers.authorization?.split(' ') ?? [];
-    return type === 'Bearer' ? token : undefined;
+    const authHeader = request.headers.authorization;
+    if (!authHeader) {
+      this.logger.debug('No authorization header found');
+      return undefined;
+    }
+
+    const [type, token] = authHeader.split(' ');
+    if (type !== 'Bearer') {
+      this.logger.debug(`Invalid authorization type: ${type}`);
+      return undefined;
+    }
+
+    if (!token) {
+      this.logger.debug('No token found in authorization header');
+      return undefined;
+    }
+
+    return token;
   }
 
   private matchRoles(requiredRoles: Role[], userRoles: string[]): boolean {

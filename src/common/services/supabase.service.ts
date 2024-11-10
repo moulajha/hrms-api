@@ -22,24 +22,7 @@ export class SupabaseService {
     error: AuthError | null;
   }> {
     try {
-      // Create a new client with the token
-      const supabase = createClient(
-        this.configService.get('app.supabase.url'),
-        this.configService.get('app.supabase.anonKey'),
-        {
-          auth: {
-            persistSession: false,
-            autoRefreshToken: false,
-          },
-          global: {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          },
-        }
-      );
-
-      const { data: { user }, error } = await supabase.auth.getUser();
+      const { data: { user }, error } = await this.supabase.auth.getUser(token);
       
       if (error) {
         return { user: null, error };
@@ -125,24 +108,7 @@ export class SupabaseService {
 
   async signOut(token: string): Promise<{ error: AuthError | null }> {
     try {
-      // Create a new client with the token
-      const supabase = createClient(
-        this.configService.get('app.supabase.url'),
-        this.configService.get('app.supabase.anonKey'),
-        {
-          auth: {
-            persistSession: false,
-            autoRefreshToken: false,
-          },
-          global: {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          },
-        }
-      );
-
-      const { error } = await supabase.auth.signOut();
+      const { error } = await this.supabase.auth.signOut();
       return { error };
     } catch (error) {
       return { error: error as AuthError };
