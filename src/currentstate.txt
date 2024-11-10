@@ -1,0 +1,129 @@
+Create a multi-tenant HRMS (Human Resource Management System) API using NestJS with the following specifications:
+
+1. Technology Stack:
+- NestJS as the framework
+- Supabase for authentication and database
+- TypeScript for type safety
+- Swagger for API documentation
+- Winston for logging
+- OpenTelemetry for monitoring
+
+2. Core Features:
+- Multi-tenant architecture with organization isolation
+- Role-based access control (Admin, HR, Employee)
+- JWT-based authentication with Supabase
+- Request tracing and monitoring
+- Structured error handling
+- API versioning support
+
+3. Authentication Module:
+- Implement endpoints:
+  - POST /auth/signup
+  - POST /auth/signin
+  - POST /auth/signout
+  - GET /auth/me
+  - POST /auth/reset-password
+  - POST /auth/update-password
+  - GET /auth/refresh
+- Use Supabase authentication
+- Implement proper token handling and verification
+- Include role and permission management
+
+4. Common Services & Utilities:
+- SupabaseService for Supabase client management
+- LoggerService for structured logging
+- RequestContextService for request context management
+- Guards for authentication and authorization
+- Interceptors for request/response transformation
+- Custom decorators for metadata handling
+
+5. Configuration:
+- Environment-based configuration
+- Supabase connection settings
+- Logging configuration
+- API timeout and retry settings
+- CORS and rate limiting
+- Monitoring endpoints
+
+6. Database Schema:
+- Users table (managed by Supabase Auth)
+- user_roles table (user_id, role)
+- user_permissions table (user_id, permission)
+- user_tenants table (user_id, tenant_id)
+- profiles table (user details)
+
+7. Security Features:
+- JWT token validation
+- Role-based access control
+- Data isolation per tenant
+- Input validation using class-validator
+- Rate limiting
+- CORS configuration
+
+8. Error Handling:
+- Global exception filter
+- Structured error responses
+- Proper HTTP status codes
+- Validation error handling
+- Custom error types
+
+9. Monitoring & Logging:
+- Request/Response logging
+- Error logging
+- Performance metrics
+- Distributed tracing
+- Health checks
+
+10. Code Organization:
+- Modular architecture
+- Separation of concerns
+- Clean code principles
+- Proper TypeScript types
+- Comprehensive documentation
+
+11. Environment Variables:
+```env
+NODE_ENV=development
+APP_NAME=hrms-api
+APP_VERSION=1.0.0
+PORT=3000
+SUPABASE_URL=your_supabase_url
+SUPABASE_ANON_KEY=your_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_service_key
+SUPABASE_JWT_SECRET=your_jwt_secret
+LOG_LEVEL=info
+LOG_ENABLE_CONSOLE=true
+LOG_ENABLE_FILE=true
+LOG_FILENAME=app.log
+MONITORING_ENABLED=true
+TRACING_ENDPOINT=http://localhost:4318/v1/traces
+METRICS_ENDPOINT=http://localhost:4318/v1/metrics
+API_TIMEOUT=5000
+API_RETRY_ATTEMPTS=3
+API_RETRY_DELAY=1000
+CORS_ENABLED=true
+CORS_ORIGIN=http://localhost:3000
+RATE_LIMIT_ENABLED=true
+RATE_LIMIT_MAX=100
+Testing Requirements:
+Unit tests for services
+Integration tests for API endpoints
+E2E tests for critical flows
+Test coverage requirements
+Mock external services
+Documentation:
+API documentation using Swagger
+Code documentation using JSDoc
+README with setup instructions
+Environment configuration guide
+Deployment guidelines
+Development Practices:
+Git workflow
+Code review guidelines
+ESLint configuration
+Prettier setup
+CI/CD pipeline configuration
+The application should follow NestJS best practices, implement proper error handling, and maintain clean code principles throughout the codebase.
+
+
+This prompt provides a comprehensive blueprint for rebuilding the HRMS API with all necessary components and best practices.
