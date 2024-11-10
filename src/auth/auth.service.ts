@@ -1,6 +1,7 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, InternalServerErrorException } from '@nestjs/common';
 import { SupabaseService } from '../common/services/supabase.service';
 import { AuthError, User, Session } from '@supabase/supabase-js';
+import { Role } from '../common/decorators/roles.decorator';
 
 @Injectable()
 export class AuthService {
@@ -17,7 +18,9 @@ export class AuthService {
       throw new UnauthorizedException('User not found');
     }
 
-    const [roles, permissions] = await Promise.all([
+    // Get user profile, roles and permissions
+    const [profile, roles, permissions] = await Promise.all([
+      this.supabaseService.getUserProfile(data.user.id),
       this.supabaseService.getUserRoles(data.user.id),
       this.supabaseService.getUserPermissions(data.user.id),
     ]);
@@ -26,6 +29,7 @@ export class AuthService {
       user: {
         id: data.user.id,
         email: data.user.email,
+        profile,
         roles,
         permissions,
       },
@@ -33,24 +37,44 @@ export class AuthService {
     };
   }
 
-  async signUp(email: string, password: string) {
-    const { data, error } = await this.supabaseService.signUp(email, password);
-    
-    if (error) {
-      throw new UnauthorizedException(error.message);
-    }
+  async signUp(email: string, password: string, organizationId: string, role: Role = Role.EMPLOYEE) {
+    // Start a transaction
+    const transaction = await this.supabaseService.startTransaction();
 
-    if (!data?.user) {
-      throw new UnauthorizedException('Failed to create user');
-    }
+    try {
+      // Validate organizationId
+      const organizationExists = await this.supabaseService.checkOrganizationExists(organizationId);
+      if (!organizationExists) {
+        throw new UnauthorizedException('Invalid organization ID');
+      }
 
-    return {
-      user: {
-        id: data.user.id,
-        email: data.user.email,
-      },
-      session: data.session,
-    };
+      // Proceed with signup
+      const { data, error } = await this.supabaseService.signUp(email, password, organizationId, role);
+      
+      if (error) {
+        throw new UnauthorizedException(error.message);
+      }
+
+      if (!data?.user) {
+        throw new UnauthorizedException('Failed to create user');
+      }
+
+      // Commit transaction
+      await transaction.commit();
+
+      return {
+        user: {
+          id: data.user.id,
+          email: data.user.email,
+          role,
+        },
+        session: data.session,
+      };
+    } catch (error) {
+      // Rollback transaction in case of error
+      await transaction.rollback();
+      throw new InternalServerErrorException('Signup process failed');
+    }
   }
 
   async signOut(token: string) {
@@ -95,13 +119,12 @@ export class AuthService {
     };
   }
 
-  private mapUserResponse(user: User, session: Session | null, roles: string[] = [], permissions: string[] = []) {
+  private mapUserResponse(user: User, session: Session | null) {
     return {
       user: {
         id: user.id,
         email: user.email,
-        roles,
-        permissions,
+        role: user.user_metadata?.role || Role.EMPLOYEE,
       },
       session,
     };

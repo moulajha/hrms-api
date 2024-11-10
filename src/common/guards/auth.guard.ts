@@ -49,7 +49,7 @@ export class AuthGuard implements CanActivate {
         throw new UnauthorizedException('Invalid token');
       }
 
-      // Get user roles and permissions
+      // Get user roles and permissions from Supabase metadata
       const [roles, permissions] = await Promise.all([
         this.supabaseService.getUserRoles(user.id),
         this.supabaseService.getUserPermissions(user.id),
@@ -69,13 +69,14 @@ export class AuthGuard implements CanActivate {
         throw new ForbiddenException('Insufficient permissions');
       }
 
-      // Get tenant ID
-      const tenantId = await this.supabaseService.getTenantId(user.id);
+      // Get tenant ID from user metadata
+      const tenantId = user.user_metadata?.tenant_id || null;
 
       // Set user and tenant info in request context
       const userContext = {
         id: user.id,
         email: user.email,
+        role: user.user_metadata?.role || Role.EMPLOYEE,
         roles,
         permissions,
         tenantId,
@@ -123,6 +124,10 @@ export class AuthGuard implements CanActivate {
   }
 
   private matchRoles(requiredRoles: Role[], userRoles: string[]): boolean {
+    // If user has SUPER_ADMIN role, they have access to everything
+    if (userRoles.includes(Role.SUPER_ADMIN)) {
+      return true;
+    }
     return requiredRoles.some(role => userRoles.includes(role));
   }
 

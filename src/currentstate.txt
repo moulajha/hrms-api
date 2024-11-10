@@ -127,3 +127,33 @@ The application should follow NestJS best practices, implement proper error hand
 
 
 This prompt provides a comprehensive blueprint for rebuilding the HRMS API with all necessary components and best practices.
+
+
+What's Implemented:
+
+Role and Permission Definitions:
+
+Enum definitions for roles (SUPER_ADMIN, ADMIN, HR_MANAGER, etc.)
+Enum definitions for permissions (CREATE_EMPLOYEE, READ_EMPLOYEE, etc.)
+Decorators for applying roles and permissions (@Roles, @Permissions, @Auth)
+Authorization Logic:
+
+AuthGuard with role and permission checking logic
+Integration with Supabase for basic authentication
+What's Missing:
+
+Database Layer:
+
+No user_roles table in Supabase
+No user_permissions table in Supabase
+No actual storage of role/permission assignments
+Role Management:
+
+No APIs to assign roles to users
+No APIs to manage permissions
+No endpoints currently using the role/permission decorators
+Business Logic:
+
+No role-based access implementation in actual business features
+No permission validation in real endpoints
+No role hierarchy management

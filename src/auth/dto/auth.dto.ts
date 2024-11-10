@@ -1,37 +1,70 @@
-import { IsEmail, IsString, MinLength, IsOptional } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger';
+import { IsEmail, IsString, MinLength, IsOptional, IsUUID } from 'class-validator';
+import { Role } from '../../common/decorators/roles.decorator';
 
 export class SignInDto {
-  @ApiProperty({ example: 'user@example.com' })
+  @ApiProperty({
+    example: 'user@example.com',
+    description: 'User email address',
+  })
   @IsEmail()
   email: string;
 
-  @ApiProperty({ example: 'password123' })
+  @ApiProperty({
+    example: 'Password123!',
+    description: 'User password',
+  })
   @IsString()
   @MinLength(6)
   password: string;
 }
 
-export class SignUpDto extends SignInDto {
-  @ApiPropertyOptional({ example: 'John' })
-  @IsString()
-  @IsOptional()
-  firstName?: string;
+export class SignUpDto {
+  @ApiProperty({
+    example: 'user@example.com',
+    description: 'User email address',
+  })
+  @IsEmail()
+  email: string;
 
-  @ApiPropertyOptional({ example: 'Doe' })
+  @ApiProperty({
+    example: 'Password123!',
+    description: 'User password',
+  })
   @IsString()
+  @MinLength(6)
+  password: string;
+
+  @ApiProperty({
+    example: '123e4567-e89b-12d3-a456-426614174000',
+    description: 'Organization ID',
+  })
+  @IsUUID()
+  organizationId: string;
+
+  @ApiProperty({
+    enum: Role,
+    default: Role.EMPLOYEE,
+    description: 'User role',
+  })
   @IsOptional()
-  lastName?: string;
+  role?: Role;
 }
 
 export class ResetPasswordDto {
-  @ApiProperty({ example: 'user@example.com' })
+  @ApiProperty({
+    example: 'user@example.com',
+    description: 'User email address',
+  })
   @IsEmail()
   email: string;
 }
 
 export class UpdatePasswordDto {
-  @ApiProperty({ example: 'newPassword123' })
+  @ApiProperty({
+    example: 'NewPassword123!',
+    description: 'New password',
+  })
   @IsString()
   @MinLength(6)
   newPassword: string;
@@ -42,23 +75,25 @@ export class AuthResponseDto {
     example: {
       id: 'user-uuid',
       email: 'user@example.com',
-      roles: ['EMPLOYEE'],
-      permissions: ['READ_PROFILE']
-    }
+      role: Role.EMPLOYEE,
+    },
   })
   user: {
     id: string;
     email: string;
-    roles: string[];
-    permissions: string[];
+    role: Role;
   };
 
   @ApiProperty({
     example: {
-      access_token: 'jwt-token',
+      access_token: 'eyJhbGciOiJIUzI1...',
       token_type: 'bearer',
-      expires_in: 3600
-    }
+      expires_in: 3600,
+    },
   })
-  session: any;
+  session: {
+    access_token: string;
+    token_type: string;
+    expires_in: number;
+  };
 }

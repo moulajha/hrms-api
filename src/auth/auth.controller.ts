@@ -52,8 +52,8 @@ export class AuthController {
         value: {
           email: "user@example.com",
           password: "Password123!",
-          firstName: "John",
-          lastName: "Doe"
+          organizationId: "123e4567-e89b-12d3-a456-426614174000",
+          role: "EMPLOYEE"
         }
       }
     }
@@ -65,8 +65,7 @@ export class AuthController {
         user: {
           id: "user-uuid",
           email: "user@example.com",
-          firstName: "John",
-          lastName: "Doe"
+          role: "EMPLOYEE"
         },
         session: {
           access_token: "eyJhbGciOiJIUzI1...",
@@ -78,7 +77,12 @@ export class AuthController {
   })
   @Trace({ name: 'auth.signup' })
   async signUp(@Body() signUpDto: SignUpDto) {
-    return await this.authService.signUp(signUpDto.email, signUpDto.password);
+    return await this.authService.signUp(
+      signUpDto.email, 
+      signUpDto.password,
+      signUpDto.organizationId,
+      signUpDto.role
+    );
   }
 
   @Post('signin')
@@ -108,7 +112,7 @@ export class AuthController {
           id: "user-uuid",
           email: "user@example.com",
           roles: ["EMPLOYEE"],
-          permissions: ["READ_PROFILE"]
+          permissions: ["VIEW_PROFILE", "REQUEST_LEAVE"]
         },
         session: {
           access_token: "eyJhbGciOiJIUzI1...",
@@ -271,11 +275,18 @@ export class AuthController {
       example: {
         id: "user-uuid",
         email: "user@example.com",
-        firstName: "John",
-        lastName: "Doe",
+        profile: {
+          firstName: "John",
+          lastName: "Doe",
+          avatarUrl: "https://example.com/avatar.jpg"
+        },
         roles: ["EMPLOYEE"],
-        permissions: ["READ_PROFILE"],
-        tenantId: "tenant-uuid"
+        permissions: ["VIEW_PROFILE", "REQUEST_LEAVE"],
+        organization: {
+          id: "org-uuid",
+          name: "Acme Corp",
+          slug: "acme-corp"
+        }
       }
     }
   })
