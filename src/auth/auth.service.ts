@@ -8,39 +8,50 @@ export class AuthService {
   constructor(private readonly supabaseService: SupabaseService) {}
 
   async signIn(email: string, password: string) {
-    const { data, error } = await this.supabaseService.signIn(email, password);
-    
-    if (error) {
-      throw new UnauthorizedException(error.message);
+    try {
+      // First attempt to sign in
+      const { data, error } = await this.supabaseService.signIn(email, password);
+      
+      if (error) {
+        throw new UnauthorizedException(error.message);
+      }
+
+      if (!data?.user) {
+        throw new UnauthorizedException('User not found');
+      }
+
+      // Get user profile first
+      const profile = await this.supabaseService.getUserProfile(data.user.id);
+      
+      if (!profile?.organization_id) {
+        throw new UnauthorizedException('User not associated with any organization');
+      }
+
+      // Then get roles and permissions
+      const [roles, permissions] = await Promise.all([
+        this.supabaseService.getUserRoles(data.user.id),
+        this.supabaseService.getUserPermissions(data.user.id),
+      ]);
+
+      return {
+        user: {
+          id: data.user.id,
+          email: data.user.email,
+          profile: {
+            ...profile,
+            organization: profile.organizations,
+          },
+          roles: roles || [],
+          permissions: permissions || [],
+        },
+        session: data.session,
+      };
+    } catch (error) {
+      this.handleAuthError(error);
     }
-
-    if (!data?.user) {
-      throw new UnauthorizedException('User not found');
-    }
-
-    // Get user profile, roles and permissions
-    const [profile, roles, permissions] = await Promise.all([
-      this.supabaseService.getUserProfile(data.user.id),
-      this.supabaseService.getUserRoles(data.user.id),
-      this.supabaseService.getUserPermissions(data.user.id),
-    ]);
-
-    return {
-      user: {
-        id: data.user.id,
-        email: data.user.email,
-        profile,
-        roles,
-        permissions,
-      },
-      session: data.session,
-    };
   }
 
   async signUp(email: string, password: string, organizationId: string, role: Role = Role.EMPLOYEE) {
-    // Start a transaction
-    const transaction = await this.supabaseService.startTransaction();
-
     try {
       // Validate organizationId
       const organizationExists = await this.supabaseService.checkOrganizationExists(organizationId);
@@ -59,9 +70,6 @@ export class AuthService {
         throw new UnauthorizedException('Failed to create user');
       }
 
-      // Commit transaction
-      await transaction.commit();
-
       return {
         user: {
           id: data.user.id,
@@ -71,62 +79,79 @@ export class AuthService {
         session: data.session,
       };
     } catch (error) {
-      // Rollback transaction in case of error
-      await transaction.rollback();
-      throw new InternalServerErrorException('Signup process failed');
+      this.handleAuthError(error);
     }
   }
 
   async signOut(token: string) {
-    const { error } = await this.supabaseService.signOut(token);
-    
-    if (error) {
-      throw new UnauthorizedException(error.message);
-    }
+    try {
+      const { error } = await this.supabaseService.signOut(token);
+      
+      if (error) {
+        throw new UnauthorizedException(error.message);
+      }
 
-    return { message: 'Successfully signed out' };
+      return { message: 'Successfully signed out' };
+    } catch (error) {
+      this.handleAuthError(error);
+    }
   }
 
   async resetPassword(email: string) {
-    const { error } = await this.supabaseService.resetPassword(email);
-    
-    if (error) {
-      throw new UnauthorizedException(error.message);
-    }
+    try {
+      const { error } = await this.supabaseService.resetPassword(email);
+      
+      if (error) {
+        throw new UnauthorizedException(error.message);
+      }
 
-    return { message: 'Password reset email sent' };
+      return { message: 'Password reset email sent' };
+    } catch (error) {
+      this.handleAuthError(error);
+    }
   }
 
   async updatePassword(newPassword: string) {
-    const { data, error } = await this.supabaseService.updatePassword(newPassword);
-    
-    if (error) {
-      throw new UnauthorizedException(error.message);
-    }
+    try {
+      const { data, error } = await this.supabaseService.updatePassword(newPassword);
+      
+      if (error) {
+        throw new UnauthorizedException(error.message);
+      }
 
-    return { message: 'Password updated successfully' };
+      return { message: 'Password updated successfully' };
+    } catch (error) {
+      this.handleAuthError(error);
+    }
   }
 
   async refreshSession() {
-    const { data, error } = await this.supabaseService.refreshSession();
-    
-    if (error) {
-      throw new UnauthorizedException(error.message);
-    }
+    try {
+      const { data, error } = await this.supabaseService.refreshSession();
+      
+      if (error) {
+        throw new UnauthorizedException(error.message);
+      }
 
-    return {
-      session: data.session,
-    };
+      return {
+        session: data.session,
+      };
+    } catch (error) {
+      this.handleAuthError(error);
+    }
   }
 
-  private mapUserResponse(user: User, session: Session | null) {
-    return {
-      user: {
-        id: user.id,
-        email: user.email,
-        role: user.user_metadata?.role || Role.EMPLOYEE,
-      },
-      session,
-    };
+  private handleAuthError(error: any) {
+    console.error('Auth error:', error);
+    
+    if (error instanceof UnauthorizedException) {
+      throw error;
+    }
+
+    if (error?.message?.includes('JSON object requested')) {
+      throw new UnauthorizedException('Invalid credentials or user not found');
+    }
+
+    throw new InternalServerErrorException('Authentication failed');
   }
 }

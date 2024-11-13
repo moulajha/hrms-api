@@ -7,9 +7,14 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { Request } from 'express';
 import { SupabaseService } from '../services/supabase.service';
 import { RequestContextService } from '../services/request-context.service';
 import { Role, Permission } from '../decorators/roles.decorator';
+
+interface RequestWithUser extends Request {
+  user?: any;
+}
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -27,7 +32,7 @@ export class AuthGuard implements CanActivate {
       return true;
     }
 
-    const request = context.switchToHttp().getRequest();
+    const request = context.switchToHttp().getRequest<RequestWithUser>();
     const token = this.extractTokenFromHeader(request);
     
     if (!token) {
@@ -47,6 +52,13 @@ export class AuthGuard implements CanActivate {
       if (!user) {
         this.logger.error('No user found for token');
         throw new UnauthorizedException('Invalid token');
+      }
+
+      // Get user profile to get organization_id
+      const profile = await this.supabaseService.getUserProfile(user.id);
+      if (!profile?.organization_id) {
+        this.logger.error(`No organization found for user ${user.id}`);
+        throw new UnauthorizedException('User not associated with any organization');
       }
 
       // Get user roles and permissions from Supabase metadata
@@ -69,9 +81,6 @@ export class AuthGuard implements CanActivate {
         throw new ForbiddenException('Insufficient permissions');
       }
 
-      // Get tenant ID from user metadata
-      const tenantId = user.user_metadata?.tenant_id || null;
-
       // Set user and tenant info in request context
       const userContext = {
         id: user.id,
@@ -79,17 +88,24 @@ export class AuthGuard implements CanActivate {
         role: user.user_metadata?.role || Role.EMPLOYEE,
         roles,
         permissions,
-        tenantId,
+        tenantId: profile.organization_id,
         metadata: user.user_metadata,
         token,
       };
 
+      // Update the request object
       request.user = userContext;
-      this.contextService.set('userContext', userContext);
-      
-      if (tenantId) {
-        this.contextService.set('tenantId', tenantId);
+
+      // Get the current store from the context service and ensure it exists
+      const store = this.contextService.getStore();
+      if (!store) {
+        this.logger.error('Context store not initialized');
+        throw new Error('Context store not initialized');
       }
+
+      // Update the store with user context and tenant ID
+      store.set('userContext', userContext);
+      store.set('tenantId', profile.organization_id);
 
       this.logger.debug(`Successfully authenticated user ${user.id}`);
       return true;
@@ -102,8 +118,8 @@ export class AuthGuard implements CanActivate {
     }
   }
 
-  private extractTokenFromHeader(request: any): string | undefined {
-    const authHeader = request.headers.authorization;
+  private extractTokenFromHeader(request: RequestWithUser): string | undefined {
+    const authHeader = request.header('authorization');
     if (!authHeader) {
       this.logger.debug('No authorization header found');
       return undefined;
