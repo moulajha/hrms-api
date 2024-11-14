@@ -15,8 +15,14 @@ describe('AppController', () => {
   });
 
   describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(appController.getHello()).toBe('Hello World!');
+    it('should return API root information', () => {
+      const result = appController.root();
+      expect(result).toEqual({
+        message: 'HRMS API is running',
+        docs: '/api/docs',
+        health: '/health',
+        info: '/info',
+      });
     });
   });
 });

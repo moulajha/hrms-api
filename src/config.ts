@@ -41,7 +41,7 @@ const config: Config = {
   nodeEnv: 'production',
   name: 'hrms-api',
   version: '1.0.0',
-  port: 3000,
+  port: parseInt(process.env.PORT || '3000', 10), // Prioritize Heroku's PORT
   database: {
     url: "postgresql://postgres.lrbayefertebmfgrzcuo:N%2Av%23MvVHkjSu74d@aws-0-us-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true",
     directUrl: "postgresql://postgres.lrbayefertebmfgrzcuo:N%2Av%23MvVHkjSu74d@aws-0-us-east-1.pooler.supabase.com:5432/postgres"

@@ -81,14 +81,20 @@ async function bootstrap() {
     setupSwagger(app);
   }
 
+  // Get port from environment or config
+  const port = process.env.PORT || configService.get('app.port');
+  
+  // Log the port we're attempting to bind to
+  logger.log(`Attempting to start server on port ${port}`, 'Bootstrap');
+
   // Start server
-  const port = configService.get('app.port');
-  await app.listen(port, '0.0.0.0'); // Listen on all network interfaces
+  await app.listen(port);
   
   logger.log(
     `Application is running on: ${await app.getUrl()}`,
     'Bootstrap',
     {
+      port: port,
       version: configService.get('app.version'),
       nodeEnv: configService.get('app.nodeEnv'),
       swagger: configService.get('app.nodeEnv') !== 'production' ? `${await app.getUrl()}/api/docs` : 'disabled'
