@@ -6,7 +6,7 @@ import { UpdateEmployeeDto } from './dto/update-employee.dto';
 import { QueryEmployeeDto } from './dto/query-employee.dto';
 import { AuthGuard } from '../common/guards/auth.guard';
 
-@ApiTags('employees')
+@ApiTags('Employees')
 @ApiBearerAuth()
 @UseGuards(AuthGuard)
 @Controller('employees')

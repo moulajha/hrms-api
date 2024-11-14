@@ -46,9 +46,10 @@ export function setupSwagger(app: INestApplication) {
       },
       'JWT-auth'
     )
-    .addTag('Authentication', 'Authentication and authorization endpoints')
-    .addTag('Health', 'Health check endpoints')
-    .addTag('Info', 'Application information endpoints')
+    .addTag('Authentication', 'User authentication and authorization endpoints')
+    .addTag('System', 'System health, information, and status endpoints')
+    .addTag('Organizations', 'Organization management endpoints')
+    .addTag('Employees', 'Employee management endpoints')
     .addServer('http://localhost:3000', 'Local environment')
     .build();
 

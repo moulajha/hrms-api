@@ -7,7 +7,7 @@ import { UpdateOrganizationDto } from './dto/update-organization.dto';
 import { QueryOrganizationDto } from './dto/query-organization.dto';
 import { AuthGuard } from '../common/guards/auth.guard';
 
-@ApiTags('organizations')
+@ApiTags('Organizations')
 @Controller('organizations')
 export class OrganizationController {
   constructor(private readonly organizationService: OrganizationService) {}

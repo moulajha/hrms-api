@@ -38,7 +38,7 @@ interface Config {
 }
 
 const config: Config = {
-  nodeEnv: 'production',
+  nodeEnv: 'development',  // Changed from 'production' to 'development'
   name: 'hrms-api',
   version: '1.0.0',
   port: parseInt(process.env.PORT || '3000', 10), // Prioritize Heroku's PORT
