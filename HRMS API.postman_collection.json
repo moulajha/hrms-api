@@ -1,0 +1,660 @@
+{
+	"info": {
+		"_postman_id": "d03acc00-00cd-44fd-9f31-65dddd2458c4",
+		"name": "HRMS API",
+		"description": "Human Resource Management System API Documentation",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "11133184"
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Sign Up",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Tests tab for Sign In request",
+									"pm.test(\"Successful sign-in and role verification\", function() {",
+									"    pm.response.to.have.status(200);",
+									"    ",
+									"    if (pm.response.code === 200) {",
+									"        try {",
+									"            const jsonData = pm.response.json();",
+									"            const data = jsonData.data;",
+									"            const user = data.user;",
+									"            const session = data.session;",
+									"            ",
+									"            // Set auth and user info",
+									"            pm.environment.set(\"accessToken\", session.access_token);",
+									"            pm.environment.set(\"organizationId\", user.profile.organization_id);",
+									"            ",
+									"            // Set and verify roles",
+									"            const roles = user.roles;",
+									"            pm.environment.set(\"userRoles\", roles);",
+									"            ",
+									"            // Log current roles for debugging",
+									"            console.log(\"Current user roles:\", roles);",
+									"            ",
+									"            // Verify if user has required roles (ADMIN or HR_MANAGER)",
+									"            const hasRequiredRole = roles.some(role => ",
+									"                role === 'ADMIN' || role === 'HR_MANAGER'",
+									"            );",
+									"            ",
+									"            pm.test(\"User has required role for employee creation\", () => {",
+									"                pm.expect(hasRequiredRole).to.be.true;",
+									"            });",
+									"            ",
+									"            // Log all set variables",
+									"            console.log(\"Set variables:\", {",
+									"                accessToken: pm.environment.get(\"accessToken\"),",
+									"                organizationId: pm.environment.get(\"organizationId\"),",
+									"                roles: pm.environment.get(\"userRoles\")",
+									"            });",
+									"        } catch (error) {",
+									"            console.error(\"Error processing response:\", error);",
+									"            throw error;",
+									"        }",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"auserh@example.com\",\n  \"password\": \"Password123!\",\n  \"organizationId\": \"{{organizationId}}\",\n  \"role\": \"ADMIN\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/signup",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"signup"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Super Admin",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"superadmin@example.com\",\n  \"password\": \"SuperAdmin123!\",\n  \"organizationId\": \"{{organizationId}}\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/create-super-admin",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"create-super-admin"
+							]
+						},
+						"description": "Create a new super admin user (requires SUPER_ADMIN role)"
+					},
+					"response": []
+				},
+				{
+					"name": "Sign In",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"Password123!\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/signin",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"signin"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Sign Out",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/auth/signout",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"signout"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Current User",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/auth/me",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"me"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Reset Password",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"user@example.com\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/reset-password",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"reset-password"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Password",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"newPassword\": \"NewPassword123!\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/update-password",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"update-password"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Refresh Token",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{refreshToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/auth/refresh",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"refresh"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Organizations",
+			"item": [
+				{
+					"name": "Create Organization",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Acme Corporation\",\n  \"slug\": \"acme-corp\",\n  \"email\": \"contact@acme.com\",\n  \"phone\": \"+1234567890\",\n  \"address\": \"123 Business Street\",\n  \"gstin\": \"GSTIN123456789\",\n  \"pan\": \"PAN123456789\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/organizations",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"organizations"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Organizations",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/organizations?search=Acme&page=1&limit=10",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"organizations"
+							],
+							"query": [
+								{
+									"key": "search",
+									"value": "Acme",
+									"description": "Optional search term"
+								},
+								{
+									"key": "page",
+									"value": "1",
+									"description": "Page number (default: 1)"
+								},
+								{
+									"key": "limit",
+									"value": "10",
+									"description": "Items per page (default: 10, max: 100)"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Organization by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/organizations/{{organizationId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"organizations",
+								"{{organizationId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Organization by Slug",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/organizations/slug/{{organizationSlug}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"organizations",
+								"slug",
+								"{{organizationSlug}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Organization",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Updated Acme Corporation\",\n  \"slug\": \"updated-acme-corp\",\n  \"email\": \"updated@acme.com\",\n  \"phone\": \"+9876543210\",\n  \"address\": \"456 Updated Street\",\n  \"gstin\": \"GSTIN987654321\",\n  \"pan\": \"PAN987654321\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/organizations/{{organizationId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"organizations",
+								"{{organizationId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Organization",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/organizations/{{organizationId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"organizations",
+								"{{organizationId}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Employees",
+			"item": [
+				{
+					"name": "Create Employee",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsImtpZCI6IlhieFQyeis0RS8yRXRRUmQiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2xyYmF5ZWZlcnRlYm1mZ3J6Y3VvLnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiIzZmE5NmRmMC1iNjM3LTQzYTMtOGE3My05MzQxOWYzMzc0NmEiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzMxNTMxNDIxLCJpYXQiOjE3MzE1Mjc4MjEsImVtYWlsIjoiYXVzZXJqQGV4YW1wbGUuY29tIiwicGhvbmUiOiIiLCJhcHBfbWV0YWRhdGEiOnsicHJvdmlkZXIiOiJlbWFpbCIsInByb3ZpZGVycyI6WyJlbWFpbCJdfSwidXNlcl9tZXRhZGF0YSI6eyJlbWFpbCI6ImF1c2VyakBleGFtcGxlLmNvbSIsImVtYWlsX3ZlcmlmaWVkIjpmYWxzZSwib3JnYW5pemF0aW9uX2lkIjoiMmUyYjU1YWItMDQ1My00Njc2LWJlMmYtMjA0NTdhYjYyZmE3IiwicGhvbmVfdmVyaWZpZWQiOmZhbHNlLCJzdWIiOiIzZmE5NmRmMC1iNjM3LTQzYTMtOGE3My05MzQxOWYzMzc0NmEifSwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJhYWwiOiJhYWwxIiwiYW1yIjpbeyJtZXRob2QiOiJwYXNzd29yZCIsInRpbWVzdGFtcCI6MTczMTUyNzgyMX1dLCJzZXNzaW9uX2lkIjoiOGU5OTI1MDgtZDY3NS00NjM1LWJhZTItNDhkYzg2ZDJkZTVhIiwiaXNfYW5vbnltb3VzIjpmYWxzZX0.Ch97If9huYvJIQNR5ohNw8enZtT8BjEPSYR1GMrrl_s",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"officialEmail\": \"john.doe@company.com\",\n  \"mobileNumber\": \"1234567890\",\n  \"gender\": \"MALE\",\n  \"joinDate\": \"2024-01-01\",\n  \"employeeTypeId\": \"{{employeeTypeId}}\",\n  \"statusId\": \"{{statusId}}\",\n  \"organizationId\": \"{{organizationId}}\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/employees",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"employees"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Employees",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/employees?organizationId={{organizationId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"employees"
+							],
+							"query": [
+								{
+									"key": "organizationId",
+									"value": "{{organizationId}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Employee by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/employees/{{employeeId}}?organizationId={{organizationId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"employees",
+								"{{employeeId}}"
+							],
+							"query": [
+								{
+									"key": "organizationId",
+									"value": "{{organizationId}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Employee",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"firstName\": \"John Updated\",\n  \"lastName\": \"Doe Updated\",\n  \"mobileNumber\": \"9876543210\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/employees/{{employeeId}}?organizationId={{organizationId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"employees",
+								"{{employeeId}}"
+							],
+							"query": [
+								{
+									"key": "organizationId",
+									"value": "{{organizationId}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Employee",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/employees/{{employeeId}}?organizationId={{organizationId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"employees",
+								"{{employeeId}}"
+							],
+							"query": [
+								{
+									"key": "organizationId",
+									"value": "{{organizationId}}"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:3000"
+		},
+		{
+			"key": "accessToken",
+			"value": "your_jwt_token_here"
+		},
+		{
+			"key": "refreshToken",
+			"value": "your_refresh_token_here"
+		},
+		{
+			"key": "organizationId",
+			"value": "your_organization_uuid"
+		},
+		{
+			"key": "organizationSlug",
+			"value": "your_organization_slug"
+		},
+		{
+			"key": "employeeId",
+			"value": "employee_uuid"
+		},
+		{
+			"key": "employeeTypeId",
+			"value": "employee_type_uuid"
+		},
+		{
+			"key": "statusId",
+			"value": "status_uuid"
+		}
+	]
+}
