@@ -408,11 +408,7 @@ export class SupabaseService {
 
       // Add search if provided
       if (searchTerm) {
-        query = query.or(`
-          first_name.ilike.%${searchTerm}%,
-          last_name.ilike.%${searchTerm}%,
-          official_email.ilike.%${searchTerm}%
-        `);
+        query = query.or('first_name.ilike.%' + searchTerm + '%,last_name.ilike.%' + searchTerm + '%,official_email.ilike.%' + searchTerm + '%');
       }
 
       // Add pagination
@@ -517,11 +513,7 @@ export class SupabaseService {
 
       // Add search if provided
       if (searchTerm) {
-        query = query.or(`
-          name.ilike.%${searchTerm}%,
-          slug.ilike.%${searchTerm}%,
-          email.ilike.%${searchTerm}%
-        `);
+        query = query.or('name.ilike.%' + searchTerm + '%,slug.ilike.%' + searchTerm + '%,email.ilike.%' + searchTerm + '%');
       }
 
       // Add pagination
