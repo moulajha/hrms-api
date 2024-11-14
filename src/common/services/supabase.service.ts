@@ -15,16 +15,25 @@ export class SupabaseService {
   private adminClient: SupabaseClient;
 
   constructor(private configService: ConfigService) {
+    // Get configuration values with fallback to environment variables
+    const supabaseUrl = this.configService.get('app.supabase.url') || process.env.SUPABASE_URL;
+    const supabaseAnonKey = this.configService.get('app.supabase.anonKey') || process.env.SUPABASE_ANON_KEY;
+    const supabaseServiceKey = this.configService.get('app.supabase.serviceKey') || process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!supabaseUrl || !supabaseAnonKey || !supabaseServiceKey) {
+      throw new Error('Supabase configuration is missing. Please check your configuration.');
+    }
+
     // Client for public operations (used by frontend)
     this.supabase = createClient(
-      this.configService.get('app.supabase.url'),
-      this.configService.get('app.supabase.anonKey'),
+      supabaseUrl,
+      supabaseAnonKey,
     );
 
     // Admin client with service role for backend operations
     this.adminClient = createClient(
-      this.configService.get('app.supabase.url'),
-      this.configService.get('app.supabase.serviceKey'),
+      supabaseUrl,
+      supabaseServiceKey,
       {
         auth: {
           autoRefreshToken: false,
