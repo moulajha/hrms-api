@@ -23,14 +23,18 @@ services:
     volumes:
       - ./otel-collector-config.yml:/etc/otelcol-contrib/config.yaml
     command: ["--config=/etc/otelcol-contrib/config.yaml"]
+    # Add restart policy to handle port conflicts
+    restart: on-failure
 
   jaeger:
     image: jaegertracing/all-in-one:latest
     ports:
       - "16686:16686"  # Jaeger UI
-      - "4317:4317"    # OTLP gRPC receiver
+      - "14250:14250"  # Jaeger gRPC receiver
     environment:
       - COLLECTOR_OTLP_ENABLED=true
+    # Add restart policy
+    restart: on-failure
 
   prometheus:
     image: prom/prometheus
@@ -40,3 +44,10 @@ services:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
+    # Add restart policy
+    restart: on-failure
+
+# Network configuration to ensure inter-service communication
+networks:
+  default:
+    driver: bridge

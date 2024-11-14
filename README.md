@@ -1,85 +1,79 @@
-# HRMS Setup Instructions
+# HRMS API Docker Deployment
 
-## Database Setup
+## Prerequisites
+- Docker
+- Docker Compose
+- Node.js 20.x
 
-Follow these steps in order to set up the database and test user:
+## Environment Configuration
+1. Ensure `.env` file is properly configured with your environment variables
+2. Review and update `docker-compose.yml` if needed
 
-1. Clean the database:
-```sql
--- Run drop.sql to remove all existing objects
+## Deployment Steps
+
+### 1. Build and Start Services
+```bash
+# Build and start all services
+docker-compose up --build
+
+# Or run in detached mode
+docker-compose up -d --build
 ```
 
-2. Create the schema with system roles:
-```sql
--- Run dataModel_v1.sql to create tables, functions, policies, and system roles
+### 2. Access Services
+- API: http://localhost:3000
+  - Swagger Docs: http://localhost:3000/api/docs
+- Jaeger Tracing UI: http://localhost:16686
+- Prometheus Metrics: http://localhost:9090
+
+### 3. Stop Services
+```bash
+# Stop and remove containers
+docker-compose down
+
+# Stop and remove containers with volumes
+docker-compose down -v
 ```
 
-3. Insert demo organization:
-```sql
--- Run insertOrg.sql to create the demo organization and default settings
-```
-
-4. Set up test user:
-```sql
--- Run insertTestUser.sql to create the test user profile and roles
-```
-
-5. Create Authentication User:
-   - Go to Supabase Dashboard
-   - Navigate to Authentication > Users
-   - Click "Add User"
-   - Use these credentials:
-     - Email: test@example.com
-     - Password: Test123!
-   - The user will be automatically linked to the profile created in step 4
-
-## Key Changes in v1
-
-The main differences in dataModel_v1.sql compared to the original schema:
-1. System roles are inserted before enabling RLS
-2. All organization_id references are properly qualified
-3. RLS policies are optimized for better performance
-
-## Testing Signin
-
-You can now test signin with:
-- Email: test@example.com
-- Password: Test123!
-
-The user will have:
-- Organization: Demo Organization
-- Role: HR Manager
-- Permissions: manage_employees, manage_attendance, manage_payroll, view_reports
+## Monitoring and Observability
+- **Jaeger UI**: View distributed traces and understand request flows
+- **Prometheus**: Monitor application metrics and performance
 
 ## Troubleshooting
+- Check container logs: 
+  ```bash
+  # View logs for a specific service
+  docker-compose logs hrms-api
+  
+  # Follow logs in real-time
+  docker-compose logs -f hrms-api
+  ```
 
-If you encounter signin issues:
+- Verify network connectivity:
+  ```bash
+  docker network ls
+  docker network inspect hrms1_default
+  ```
 
-1. Verify the organization exists:
-```sql
-SELECT * FROM organizations WHERE slug = 'demo-org';
-```
+## Development Workflow
+- Local development: `npm run start:dev`
+- Run tests: `npm test`
+- Build for production: `npm run build`
 
-2. Check user profile:
-```sql
-SELECT * FROM profiles WHERE id = '[user-id]';
-```
+## Configuration Files
+- `Dockerfile`: Multi-stage build configuration
+- `docker-compose.yml`: Service orchestration
+- `otel-collector-config.yml`: OpenTelemetry Collector configuration
+- `prometheus.yml`: Prometheus scraping configuration
 
-3. Verify user roles:
-```sql
-SELECT r.name 
-FROM user_roles ur 
-JOIN roles r ON r.id = ur.role_id 
-WHERE ur.user_id = '[user-id]';
-```
+## Security Considerations
+- Always use environment variables for sensitive information
+- Regularly update dependencies
+- Use the provided non-root user in Dockerfile
 
-4. Check system roles exist:
-```sql
-SELECT * FROM roles WHERE organization_id IS NULL;
-```
+## Performance Tuning
+- Adjust OpenTelemetry and Prometheus configurations as needed
+- Monitor resource usage with `docker stats`
 
-5. Check RLS policies are active:
-```sql
-SELECT * FROM pg_policies 
-WHERE schemaname = 'public' 
-AND tablename IN ('organizations', 'profiles', 'roles', 'user_roles');
+## Continuous Integration
+Integrate these Docker configurations with your CI/CD pipeline for automated testing and deployment.
