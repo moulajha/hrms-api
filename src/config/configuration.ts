@@ -1,35 +1,71 @@
 import { registerAs } from '@nestjs/config';
+import config from '../config';
 
-export default registerAs('app', () => ({
-  nodeEnv: process.env.NODE_ENV || 'development',
-  name: process.env.APP_NAME || 'hrms-api',
-  version: process.env.APP_VERSION || '1.0.0',
-  port: parseInt(process.env.PORT, 10) || 3000,
+// Ensure type safety for the configuration
+interface AppConfig {
+  nodeEnv: string;
+  name: string;
+  version: string;
+  port: number;
   supabase: {
-    url: process.env.SUPABASE_URL,
-    anonKey: process.env.SUPABASE_ANON_KEY,
-    serviceKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+    url: string;
+    anonKey: string;
+    serviceKey: string;
+  };
+  logging: {
+    level: string;
+    enableConsole: boolean;
+    enableFile: boolean;
+    filename: string;
+  };
+  monitoring: {
+    enabled: boolean;
+    tracingEndpoint: string;
+    metricsEndpoint: string;
+  };
+  api: {
+    timeout: number;
+    retryAttempts: number;
+    retryDelay: number;
+  };
+  security: {
+    corsEnabled: boolean;
+    corsOrigin: string[];
+    rateLimitEnabled: boolean;
+    rateLimitMax: number;
+  };
+}
+
+export default registerAs('app', (): AppConfig => ({
+  nodeEnv: config.nodeEnv || 'production',
+  name: config.name || 'hrms-api',
+  version: config.version || '1.0.0',
+  port: config.port || 3000,
+  supabase: {
+    url: config.supabase.url,
+    anonKey: config.supabase.anonKey,
+    serviceKey: config.supabase.serviceKey,
   },
   logging: {
-    level: process.env.LOG_LEVEL || 'info',
-    enableConsole: process.env.LOG_ENABLE_CONSOLE !== 'false',
-    enableFile: process.env.LOG_ENABLE_FILE === 'true',
-    filename: process.env.LOG_FILENAME || 'app.log',
+    level: config.logging.level || 'info',
+    enableConsole: config.logging.enableConsole,
+    enableFile: config.logging.enableFile,
+    filename: config.logging.filename,
   },
   monitoring: {
-    enabled: process.env.MONITORING_ENABLED === 'true',
-    tracingEndpoint: process.env.TRACING_ENDPOINT || 'http://localhost:4318/v1/traces',
-    metricsEndpoint: process.env.METRICS_ENDPOINT || 'http://localhost:4318/v1/metrics',
+    enabled: config.monitoring.enabled,
+    tracingEndpoint: config.monitoring.tracingEndpoint,
+    metricsEndpoint: config.monitoring.metricsEndpoint,
   },
   api: {
-    timeout: parseInt(process.env.API_TIMEOUT, 10) || 5000,
-    retryAttempts: parseInt(process.env.API_RETRY_ATTEMPTS, 10) || 3,
-    retryDelay: parseInt(process.env.API_RETRY_DELAY, 10) || 1000,
+    timeout: config.api.timeout,
+    retryAttempts: config.api.retryAttempts,
+    retryDelay: config.api.retryDelay,
   },
   security: {
-    corsEnabled: process.env.CORS_ENABLED === 'true',
-    corsOrigin: process.env.CORS_ORIGIN?.split(',') || ['http://localhost:3000'],
-    rateLimitEnabled: process.env.RATE_LIMIT_ENABLED === 'true',
-    rateLimitMax: parseInt(process.env.RATE_LIMIT_MAX, 10) || 100,
+    corsEnabled: config.security.corsEnabled,
+    corsOrigin: config.security.corsOrigin,
+    rateLimitEnabled: config.security.rateLimitEnabled,
+    rateLimitMax: config.security.rateLimitMax,
   },
 }));
