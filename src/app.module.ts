@@ -12,6 +12,8 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
 import configuration from './config/configuration';
 import { EmployeeModule } from './employee/employee.module';
 import { OrganizationModule } from './organization/organization.module';
+import { LoggerService } from './common/services/logger.service';
+import { RequestContextService } from './common/services/request-context.service';
 
 @Module({
   imports: [
@@ -27,9 +29,13 @@ import { OrganizationModule } from './organization/organization.module';
   controllers: [AppController],
   providers: [
     AppService,
+    LoggerService,
     {
       provide: APP_FILTER,
-      useClass: HttpExceptionFilter,
+      useFactory: (logger: LoggerService, requestContext: RequestContextService) => {
+        return new HttpExceptionFilter(logger, requestContext);
+      },
+      inject: [LoggerService, RequestContextService],
     },
     {
       provide: APP_INTERCEPTOR,

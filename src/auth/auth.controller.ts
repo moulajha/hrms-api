@@ -27,10 +27,12 @@ import {
   UpdatePasswordDto,
   AuthResponseDto,
 } from './dto/auth.dto';
+import { CreateSuperAdminDto } from './dto/create-super-admin.dto';
 import { AuthGuard } from '../common/guards/auth.guard';
 import { Public } from '../common/decorators/user.decorator';
 import { CurrentUser } from '../common/decorators/user.decorator';
 import { Trace } from '../common/decorators/trace.decorator';
+import { Role, Auth } from '../common/decorators/roles.decorator';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -82,6 +84,47 @@ export class AuthController {
       signUpDto.password,
       signUpDto.organizationId,
       signUpDto.role
+    );
+  }
+
+  @Post('create-super-admin')
+  @UseGuards(AuthGuard)
+  @Auth([Role.SUPER_ADMIN])
+  @ApiOperation({
+    summary: 'Create a new super admin user',
+    description: 'Create a new super admin user (requires SUPER_ADMIN role)'
+  })
+  @ApiBearerAuth('JWT-auth')
+  @ApiBody({
+    type: CreateSuperAdminDto,
+    description: 'Super admin creation details',
+  })
+  @ApiCreatedResponse({
+    description: 'Super admin successfully created',
+    schema: {
+      example: {
+        user: {
+          id: "user-uuid",
+          email: "admin@example.com",
+          role: "SUPER_ADMIN"
+        },
+        session: {
+          access_token: "eyJhbGciOiJIUzI1...",
+          token_type: "bearer",
+          expires_in: 3600
+        }
+      }
+    }
+  })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  @ApiForbiddenResponse({ description: 'Forbidden - Requires SUPER_ADMIN role' })
+  @Trace({ name: 'auth.createSuperAdmin' })
+  async createSuperAdmin(@Body() createSuperAdminDto: CreateSuperAdminDto) {
+    return await this.authService.signUp(
+      createSuperAdminDto.email,
+      createSuperAdminDto.password,
+      createSuperAdminDto.organizationId,
+      Role.SUPER_ADMIN
     );
   }
 
