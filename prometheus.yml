@@ -1,0 +1,7 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'hrms-api'
+    static_configs:
+      - targets: ['hrms-api:3000']
