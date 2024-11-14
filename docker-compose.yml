@@ -11,30 +11,45 @@ services:
       - .env
     environment:
       - NODE_ENV=production
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
     depends_on:
       - otel-collector
       - jaeger
+      - prometheus
+      - grafana
+    networks:
+      - monitoring
 
   otel-collector:
     image: otel/opentelemetry-collector-contrib
     ports:
-      - "4317:4317"   # OTLP gRPC receiver
       - "4318:4318"   # OTLP HTTP receiver
+      - "4319:4319"   # Alternative OTLP gRPC receiver
+      - "8889:8889"   # Prometheus metrics
     volumes:
       - ./otel-collector-config.yml:/etc/otelcol-contrib/config.yaml
     command: ["--config=/etc/otelcol-contrib/config.yaml"]
-    # Add restart policy to handle port conflicts
     restart: on-failure
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      monitoring:
+        aliases:
+          - otel-collector
 
   jaeger:
     image: jaegertracing/all-in-one:latest
     ports:
       - "16686:16686"  # Jaeger UI
-      - "14250:14250"  # Jaeger gRPC receiver
+      - "4320:4320"    # Alternative OTLP gRPC receiver
     environment:
       - COLLECTOR_OTLP_ENABLED=true
-    # Add restart policy
+      - COLLECTOR_OTLP_GRPC_PORT=4320
     restart: on-failure
+    networks:
+      monitoring:
+        aliases:
+          - jaeger
 
   prometheus:
     image: prom/prometheus
@@ -42,12 +57,44 @@ services:
       - "9090:9090"
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
-    # Add restart policy
+      - '--web.enable-lifecycle'
+      - '--web.enable-admin-api'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
     restart: on-failure
+    networks:
+      monitoring:
+        aliases:
+          - prometheus
 
-# Network configuration to ensure inter-service communication
+  grafana:
+    image: grafana/grafana-oss
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=hrms_metrics_2024!
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    depends_on:
+      - prometheus
+    restart: on-failure
+    networks:
+      monitoring:
+        aliases:
+          - grafana
+
+volumes:
+  prometheus_data:
+  grafana_data:
+
 networks:
-  default:
+  monitoring:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

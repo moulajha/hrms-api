@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import helmet from 'helmet';
+import * as promClient from 'prom-client';
 import { AppModule } from './app.module';
 import { setupSwagger } from './config/swagger.config';
 import { setupTelemetry } from './config/telemetry.config';
@@ -13,6 +14,12 @@ import { TimeoutInterceptor } from './common/interceptors/timeout.interceptor';
 import { RequestContextService } from './common/services/request-context.service';
 
 async function bootstrap() {
+  // Initialize Prometheus metrics collection
+  const collectDefaultMetrics = promClient.collectDefaultMetrics;
+  const Registry = promClient.Registry;
+  const register = new Registry();
+  collectDefaultMetrics({ register });
+
   // Setup OpenTelemetry
   await setupTelemetry();
 
@@ -75,6 +82,13 @@ async function bootstrap() {
     new TransformInterceptor(contextService),
     new TimeoutInterceptor(configService),
   );
+
+  // Prometheus metrics endpoint
+  const server = app.getHttpAdapter().getInstance();
+  server.get('/metrics', async (req, res) => {
+    res.set('Content-Type', register.contentType);
+    res.end(await register.metrics());
+  });
 
   // Setup Swagger documentation
   if (configService.get('app.nodeEnv') !== 'production') {
