@@ -1,0 +1,480 @@
+{
+	"info": {
+		"_postman_id": "d03acc00-00cd-44fd-9f31-65dddd2458c5",
+		"name": "HRMS Load Test",
+		"description": "HRMS Load Testing Collection",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Sign In",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Successful sign-in and role verification\", function() {",
+									"    pm.response.to.have.status(200);",
+									"    ",
+									"    if (pm.response.code === 200) {",
+									"        try {",
+									"            const jsonData = pm.response.json();",
+									"            const user = jsonData.user;",
+									"            const session = jsonData.session;",
+									"            ",
+									"            // Set auth and user info",
+									"            pm.environment.set(\"accessToken\", session.access_token);",
+									"            pm.environment.set(\"organizationId\", user.profile.organization.id);",
+									"            ",
+									"            // Set and verify roles",
+									"            const roles = user.roles;",
+									"            pm.environment.set(\"userRoles\", roles);",
+									"            ",
+									"            // Log current roles for debugging",
+									"            console.log(\"Current user roles:\", roles);",
+									"            ",
+									"            // Verify if user has required roles (ADMIN or HR_MANAGER)",
+									"            const hasRequiredRole = roles.some(role => ",
+									"                role === 'ADMIN' || role === 'HR_MANAGER' || role === 'SUPER_ADMIN'",
+									"            );",
+									"            ",
+									"            pm.test(\"User has required role for employee creation\", () => {",
+									"                pm.expect(hasRequiredRole).to.be.true;",
+									"            });",
+									"            ",
+									"            // Verify response structure",
+									"            pm.test(\"Response has required user data\", () => {",
+									"                pm.expect(user).to.have.property('id');",
+									"                pm.expect(user).to.have.property('email');",
+									"                pm.expect(user).to.have.property('profile').that.is.an('object');",
+									"                pm.expect(user.profile).to.have.property('organization').that.is.an('object');",
+									"                pm.expect(user).to.have.property('roles').that.is.an('array');",
+									"                pm.expect(user).to.have.property('permissions').that.is.an('array');",
+									"                pm.expect(session).to.have.property('access_token');",
+									"            });",
+									"            ",
+									"            // Log all set variables",
+									"            console.log(\"Set variables:\", {",
+									"                accessToken: session.access_token,",
+									"                organizationId: user.profile.organization.id,",
+									"                roles: roles",
+									"            });",
+									"        } catch (error) {",
+									"            console.error(\"Error processing response:\", error);",
+									"            throw error;",
+									"        }",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"Admin123!\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/signin",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"signin"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Current User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Get current user successful\", function() {",
+									"    pm.response.to.have.status(200);",
+									"    ",
+									"    if (pm.response.code === 200) {",
+									"        try {",
+									"            const user = pm.response.json();",
+									"            ",
+									"            // Verify user data structure",
+									"            pm.test(\"Response has required user data\", () => {",
+									"                pm.expect(user).to.have.property('id');",
+									"                pm.expect(user).to.have.property('email');",
+									"                pm.expect(user).to.have.property('profile').that.is.an('object');",
+									"                pm.expect(user.profile).to.have.property('organization').that.is.an('object');",
+									"                pm.expect(user).to.have.property('roles').that.is.an('array');",
+									"                pm.expect(user).to.have.property('permissions').that.is.an('array');",
+									"            });",
+									"            ",
+									"            // Log user info",
+									"            console.log(\"Current user info:\", {",
+									"                id: user.id,",
+									"                email: user.email,",
+									"                organizationId: user.profile.organization.id,",
+									"                roles: user.roles",
+									"            });",
+									"        } catch (error) {",
+									"            console.error(\"Error processing response:\", error);",
+									"            throw error;",
+									"        }",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/auth/me",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"me"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Organizations",
+			"item": [
+				{
+					"name": "Create Organization",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Organization creation successful\", function() {",
+									"    pm.response.to.have.status(201);",
+									"    ",
+									"    if (pm.response.code === 201) {",
+									"        try {",
+									"            const jsonData = pm.response.json();",
+									"            const organization = jsonData.data;",
+									"            ",
+									"            // Store organization ID for subsequent requests",
+									"            if (!pm.environment.get(\"organizationIds\")) {",
+									"                pm.environment.set(\"organizationIds\", JSON.stringify([organization.id]));",
+									"            } else {",
+									"                const ids = JSON.parse(pm.environment.get(\"organizationIds\"));",
+									"                ids.push(organization.id);",
+									"                pm.environment.set(\"organizationIds\", JSON.stringify(ids));",
+									"            }",
+									"            ",
+									"            // Verify organization data structure",
+									"            pm.test(\"Response has required organization data\", () => {",
+									"                pm.expect(organization).to.have.property('id');",
+									"                pm.expect(organization).to.have.property('name');",
+									"                pm.expect(organization).to.have.property('slug');",
+									"                pm.expect(organization).to.have.property('email');",
+									"            });",
+									"            ",
+									"            // Log success",
+									"            console.log(\"Organization created:\", {",
+									"                id: organization.id,",
+									"                name: organization.name,",
+									"                slug: organization.slug",
+									"            });",
+									"        } catch (error) {",
+									"            console.error(\"Error processing response:\", error);",
+									"            throw error;",
+									"        }",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Test Organization {{$randomInt}}\",\n  \"slug\": \"test-org-{{$randomInt}}\",\n  \"email\": \"org{{$randomInt}}@example.com\",\n  \"phone\": \"+91{{$randomInt}}\",\n  \"address\": \"Test Address\",\n  \"gstin\": \"GSTIN{{$randomInt}}\",\n  \"pan\": \"PAN{{$randomInt}}\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/organizations",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"organizations"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Organizations",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Get organizations successful\", function() {",
+									"    pm.response.to.have.status(200);",
+									"    ",
+									"    if (pm.response.code === 200) {",
+									"        try {",
+									"            const jsonData = pm.response.json();",
+									"            ",
+									"            // Verify response structure",
+									"            pm.test(\"Response has required data\", () => {",
+									"                pm.expect(jsonData).to.have.property('data').that.is.an('array');",
+									"                pm.expect(jsonData).to.have.property('meta').that.is.an('object');",
+									"                pm.expect(jsonData.meta).to.have.property('total');",
+									"                pm.expect(jsonData.meta).to.have.property('page');",
+									"                pm.expect(jsonData.meta).to.have.property('limit');",
+									"            });",
+									"            ",
+									"            // Store organization IDs",
+									"            const organizationIds = jsonData.data.map(org => org.id);",
+									"            pm.environment.set(\"organizationIds\", JSON.stringify(organizationIds));",
+									"            ",
+									"            // Log stats",
+									"            console.log(\"Organizations fetched:\", {",
+									"                count: jsonData.data.length,",
+									"                total: jsonData.meta.total,",
+									"                page: jsonData.meta.page",
+									"            });",
+									"        } catch (error) {",
+									"            console.error(\"Error processing response:\", error);",
+									"            throw error;",
+									"        }",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/organizations?page=1&limit=10",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"organizations"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Employees",
+			"item": [
+				{
+					"name": "Create Employee",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Employee creation successful\", function() {",
+									"    pm.response.to.have.status(201);",
+									"    ",
+									"    if (pm.response.code === 201) {",
+									"        try {",
+									"            const jsonData = pm.response.json();",
+									"            const employee = jsonData.data;",
+									"            ",
+									"            // Verify employee data structure",
+									"            pm.test(\"Response has required employee data\", () => {",
+									"                pm.expect(employee).to.have.property('id');",
+									"                pm.expect(employee).to.have.property('first_name');",
+									"                pm.expect(employee).to.have.property('last_name');",
+									"                pm.expect(employee).to.have.property('official_email');",
+									"                pm.expect(employee).to.have.property('organization_id');",
+									"            });",
+									"            ",
+									"            // Store employee ID",
+									"            if (!pm.environment.get(\"employeeIds\")) {",
+									"                pm.environment.set(\"employeeIds\", JSON.stringify([employee.id]));",
+									"            } else {",
+									"                const ids = JSON.parse(pm.environment.get(\"employeeIds\"));",
+									"                ids.push(employee.id);",
+									"                pm.environment.set(\"employeeIds\", JSON.stringify(ids));",
+									"            }",
+									"            ",
+									"            // Log success",
+									"            console.log(\"Employee created:\", {",
+									"                id: employee.id,",
+									"                name: `${employee.first_name} ${employee.last_name}`,",
+									"                email: employee.official_email",
+									"            });",
+									"        } catch (error) {",
+									"            console.error(\"Error processing response:\", error);",
+									"            throw error;",
+									"        }",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"firstName\": \"Test{{$randomInt}}\",\n  \"lastName\": \"Employee{{$randomInt}}\",\n  \"officialEmail\": \"employee{{$randomInt}}@example.com\",\n  \"mobileNumber\": \"+91{{$randomInt}}\",\n  \"gender\": \"MALE\",\n  \"joinDate\": \"2024-01-01\",\n  \"organizationId\": \"{{organizationId}}\",\n  \"employeeTypeId\": \"{{employeeTypeId}}\",\n  \"statusId\": \"{{statusId}}\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/employees",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"employees"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Employees",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Get employees successful\", function() {",
+									"    pm.response.to.have.status(200);",
+									"    ",
+									"    if (pm.response.code === 200) {",
+									"        try {",
+									"            const jsonData = pm.response.json();",
+									"            ",
+									"            // Verify response structure",
+									"            pm.test(\"Response has required data\", () => {",
+									"                pm.expect(jsonData).to.have.property('data').that.is.an('array');",
+									"                pm.expect(jsonData).to.have.property('meta').that.is.an('object');",
+									"                pm.expect(jsonData.meta).to.have.property('total');",
+									"                pm.expect(jsonData.meta).to.have.property('page');",
+									"                pm.expect(jsonData.meta).to.have.property('limit');",
+									"            });",
+									"            ",
+									"            // Store employee IDs",
+									"            const employeeIds = jsonData.data.map(emp => emp.id);",
+									"            pm.environment.set(\"employeeIds\", JSON.stringify(employeeIds));",
+									"            ",
+									"            // Log stats",
+									"            console.log(\"Employees fetched:\", {",
+									"                count: jsonData.data.length,",
+									"                total: jsonData.meta.total,",
+									"                page: jsonData.meta.page",
+									"            });",
+									"        } catch (error) {",
+									"            console.error(\"Error processing response:\", error);",
+									"            throw error;",
+									"        }",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/employees?page=1&limit=10",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"employees"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}

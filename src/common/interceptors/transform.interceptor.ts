@@ -5,10 +5,10 @@ import { RequestContextService } from '../services/request-context.service';
 
 export interface Response<T> {
   data: T;
-  meta: {
+  meta?: {
     timestamp: string;
-    correlationId: string;
-    requestId: string;
+    correlationId?: string;
+    requestId?: string;
   };
 }
 
@@ -18,14 +18,42 @@ export class TransformInterceptor<T> implements NestInterceptor<T, Response<T>> 
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<Response<T>> {
     return next.handle().pipe(
-      map(data => ({
-        data,
-        meta: {
-          timestamp: new Date().toISOString(),
-          correlationId: this.contextService.getCorrelationId(),
-          requestId: this.contextService.getRequestId(),
-        },
-      })),
+      map(response => {
+        // If response is null/undefined, return a properly structured response
+        if (response === undefined || response === null) {
+          return {
+            data: null,
+            meta: {
+              timestamp: new Date().toISOString(),
+              correlationId: this.contextService.getCorrelationId(),
+              requestId: this.contextService.getRequestId(),
+            }
+          };
+        }
+
+        // If response already has data/meta structure, just add missing meta fields
+        if (response.data !== undefined) {
+          return {
+            ...response,
+            meta: {
+              ...response.meta,
+              timestamp: new Date().toISOString(),
+              correlationId: this.contextService.getCorrelationId() || response.meta?.correlationId,
+              requestId: this.contextService.getRequestId() || response.meta?.requestId,
+            }
+          };
+        }
+
+        // For regular responses, wrap them in our format
+        return {
+          data: response,
+          meta: {
+            timestamp: new Date().toISOString(),
+            correlationId: this.contextService.getCorrelationId(),
+            requestId: this.contextService.getRequestId(),
+          }
+        };
+      }),
     );
   }
 }

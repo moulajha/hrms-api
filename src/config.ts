@@ -35,6 +35,11 @@ interface Config {
     rateLimitEnabled: boolean;
     rateLimitMax: number;
   };
+  cache: {
+    ttl: number;
+    checkPeriod: number;
+    maxItems: number;
+  };
 }
 
 const config: Config = {
@@ -73,6 +78,11 @@ const config: Config = {
     corsOrigin: ['http://localhost:3000'],
     rateLimitEnabled: true,
     rateLimitMax: 100,
+  },
+  cache: {
+    ttl: parseInt(process.env.CACHE_TTL || '300000', 10), // 5 minutes default
+    checkPeriod: parseInt(process.env.CACHE_CHECK_PERIOD || '60000', 10), // 1 minute default
+    maxItems: parseInt(process.env.CACHE_MAX_ITEMS || '1000', 10), // 1000 items default
   },
 };
 

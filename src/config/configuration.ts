@@ -34,6 +34,11 @@ interface AppConfig {
     rateLimitEnabled: boolean;
     rateLimitMax: number;
   };
+  cache: {
+    ttl: number;
+    checkPeriod: number;
+    maxItems: number;
+  };
 }
 
 export default registerAs('app', (): AppConfig => ({
@@ -67,5 +72,10 @@ export default registerAs('app', (): AppConfig => ({
     corsOrigin: config.security.corsOrigin,
     rateLimitEnabled: config.security.rateLimitEnabled,
     rateLimitMax: config.security.rateLimitMax,
+  },
+  cache: {
+    ttl: config.cache.ttl,
+    checkPeriod: config.cache.checkPeriod,
+    maxItems: config.cache.maxItems,
   },
 }));

@@ -1,12 +1,22 @@
 import { Module } from '@nestjs/common';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { SupabaseService } from '../common/services/supabase.service';
-import { RequestContextService } from '../common/services/request-context.service';
+import { CommonModule } from '../common/common.module';
+import {
+  AuthBaseService,
+  AuthQueryService,
+  AuthCommandService,
+} from './services';
 
 @Module({
+  imports: [CommonModule],
   controllers: [AuthController],
-  providers: [AuthService, SupabaseService, RequestContextService],
-  exports: [AuthService, SupabaseService],
+  providers: [
+    AuthService,
+    AuthBaseService,
+    AuthQueryService,
+    AuthCommandService,
+  ],
+  exports: [AuthService]
 })
 export class AuthModule {}

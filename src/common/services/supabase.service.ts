@@ -380,7 +380,7 @@ export class SupabaseService {
     try {
       const { data, error } = await this.adminClient
         .from('employees')
-        .insert(employeeData)
+        .insert([employeeData])
         .select('*, employee_types(name), employee_status(name)')
         .single();
 

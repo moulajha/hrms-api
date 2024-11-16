@@ -1,0 +1,14 @@
+apiVersion: 1
+
+datasources:
+  - name: Supabase PostgreSQL
+    type: postgres
+    url: aws-0-us-east-1.pooler.supabase.com:6543
+    database: postgres
+    user: postgres
+    secureJsonData:
+      password: 'N%2Av%23MvVHkjSu74d'
+    jsonData:
+      sslmode: 'disable'
+      postgresVersion: 1300
+      timescaledb: false
